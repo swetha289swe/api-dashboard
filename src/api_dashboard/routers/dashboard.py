@@ -1,8 +1,10 @@
 import asyncio
+
 from fastapi import APIRouter
-from api_dashboard.routers.weather import fetch_weather
+
 from api_dashboard.routers.crypto import fetch_crypto
 from api_dashboard.routers.github import fetch_github_user
+from api_dashboard.routers.weather import fetch_weather
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 

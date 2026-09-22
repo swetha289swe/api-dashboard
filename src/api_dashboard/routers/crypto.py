@@ -1,8 +1,13 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 # import requests
 import httpx
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from sqlmodel import Session
+
 from api_dashboard.cache import async_ttl_cache
+from api_dashboard.database import get_session
+from api_dashboard.models import SearchLog, User
+from api_dashboard.security import get_current_user
 
 router = APIRouter(prefix="/crypto", tags=["crypto"])
 
@@ -30,5 +35,15 @@ async def fetch_crypto(coin: str) -> dict:
 
 
 @router.get("/{coin}", response_model = CryptoResponse)
-async def get_crypto_price(coin:str):
-    return await fetch_crypto(coin)
+async def get_crypto_price(coin:str, session: Session = Depends(get_session),current_user: User = Depends(get_current_user)):
+    result = await fetch_crypto(coin)
+    log = SearchLog(
+        endpoint="crypto",
+        query=coin,
+        result_summary=f"{result['coin']}: ${result['price_usd']}",
+        user_id=current_user.id
+    )
+    session.add(log)
+    session.commit()
+
+    return result
